@@ -1,48 +1,79 @@
+from tkinter import messagebox
+
 from Utils.mib_utils import MIB
-from Protocol.packet_utils import encodeASN1
+from Protocol.packet_utils import *
 
 
-def GetResponse(OID, address, UDPAgent):
-    while True:
-        if not OID: break
-        print(OID)
+def GetResponse(decoded_message, address, UDPAgent):
+    variable_bindings = decoded_message['variable_bindings']
+    oid, _ = variable_bindings[0]
 
-        if OID[0][1] == 1:
-            print(MIB.Temperature)
-            temperatura = MIB.get_temperatura(MIB.Temperature)
-
-            if temperatura is not None:
-                print(temperatura)
-                encoded_message = encodeASN1(oid="1.1", text="Null", val=temperatura)
-                UDPAgent.sendto(encoded_message, address)
-            else:
-                encoded_message = encodeASN1(oid="1.1", text="Null", val=0.0)
-                UDPAgent.sendto(encoded_message, address)
-            break
-
-        elif OID[0][1] == 2:
-            encoded_message = encodeASN1(oid="1.2", text=MIB.Name, val=0)
-            UDPAgent.sendto(encoded_message, address)
-            break
-
-        elif OID[0][1] == 3:
-            ram_percent = MIB.getRamPercent(MIB.getData)
-            encoded_message = encodeASN1(oid="1.3", text="Null", val=ram_percent)
-            UDPAgent.sendto(encoded_message, address)
-            break
-
-        elif OID[0][1] == 4:
-            ram_gb = MIB.getRamGB(MIB.getData)
-            encoded_message = encodeASN1(oid="1.4", text="Null", val=ram_gb)
-            UDPAgent.sendto(encoded_message, address)
-            break
-
-        elif OID[0][1] == 5:
-            cpu_percent = MIB.getCPUPercent(MIB.getData)
-            encoded_message = encodeASN1(oid="1.5", text="Null", val=cpu_percent)
-            UDPAgent.sendto(encoded_message, address)
-            break
-
+    if oid == "1.1":
+        temperature = MIB.get_temperatura(MIB.Temperature)
+        if temperature is not None:
+            response = encode_snmp_message(
+                version=decoded_message['version'],
+                community=decoded_message['community'],
+                pdu_type=decoded_message['pdu_type'],
+                request_id=decoded_message['request_id'],
+                error_status=0,
+                error_index=0,
+                variable_bindings=[("1.1", temperature)]
+            )
         else:
-            UDPAgent.sendto(bytes("Invalid", "utf-8"), address)
-            break
+            response = encode_snmp_message(
+                version=decoded_message['version'],
+                community=decoded_message['community'],
+                pdu_type=decoded_message['pdu_type'],
+                request_id=decoded_message['request_id'],
+                error_status=0,
+                error_index=0,
+                variable_bindings=[("1.1", 0.0)]
+            )
+    elif oid == "1.2":
+        response = encode_snmp_message(
+            version=decoded_message['version'],
+            community=decoded_message['community'],
+            pdu_type=decoded_message['pdu_type'],
+            request_id=decoded_message['request_id'],
+            error_status=0,
+            error_index=0,
+            variable_bindings=[("1.2", MIB.Name)]
+        )
+    elif oid == "1.3":
+        ram_percent = MIB.getRamPercent(MIB.getData)
+        response = encode_snmp_message(
+            version=decoded_message['version'],
+            community=decoded_message['community'],
+            pdu_type=decoded_message['pdu_type'],
+            request_id=decoded_message['request_id'],
+            error_status=0,
+            error_index=0,
+            variable_bindings=[("1.3", ram_percent)]
+        )
+    elif oid == "1.4":
+        ram_gb = MIB.getRamGB(MIB.getData)
+        response = encode_snmp_message(
+            version=decoded_message['version'],
+            community=decoded_message['community'],
+            pdu_type=decoded_message['pdu_type'],
+            request_id=decoded_message['request_id'],
+            error_status=0,
+            error_index=0,
+            variable_bindings=[("1.4", ram_gb)]
+        )
+    elif oid == "1.5":
+        cpu_percent = MIB.getCPUPercent(MIB.getData)
+        response = encode_snmp_message(
+            version=decoded_message['version'],
+            community=decoded_message['community'],
+            pdu_type=decoded_message['pdu_type'],
+            request_id=decoded_message['request_id'],
+            error_status=0,
+            error_index=0,
+            variable_bindings=[("1.5", cpu_percent)]
+        )
+    else:
+        response = b"Invalid"
+
+    UDPAgent.sendto(response, address)
