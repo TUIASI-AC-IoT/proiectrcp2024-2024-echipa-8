@@ -8,17 +8,30 @@ class MIB:
     Name = "Agent"
     Temperature = "Celsius"
     getData = True
+    checkRam = 50
+    checkCpu = 50
+
+    @staticmethod
+    def set_check_ram(value):
+        MIB.checkRam = value
+
+    @staticmethod
+    def set_check_cpu(value):
+        MIB.checkCpu = value
+
+    @staticmethod
+    def get_check_ram():
+        return MIB.checkRam
+
+    @staticmethod
+    def get_check_cpu():
+        return MIB.checkCpu
 
 
     def get_temperatura(temperature_unit):
         try:
-            if not hasattr(psutil, "sensors_temperatures"):
-                return None  # Platforma nu suportă
 
             temperature_info = psutil.sensors_temperatures()
-
-            if not temperature_info:
-                return None
 
             cpu_sensors = ["coretemp", "k10temp", "cpu_thermal"]
             for sensor in cpu_sensors:
@@ -39,7 +52,7 @@ class MIB:
                         else:
                             temp = temp_celsius
 
-                        return round(temp, 2)
+                        return float(round(temp, 2))
 
             return None
 
